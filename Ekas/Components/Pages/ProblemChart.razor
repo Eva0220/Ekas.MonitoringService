@@ -1,0 +1,114 @@
+﻿@page "/statistic"
+
+@using System.Linq
+@using Ekas.Monitoring.ViewModels
+@using Ekas.Monitoring.Repository
+@using Ekas.Monitoring.Services
+
+@inject ProblemService problemService
+
+<RadzenText TextStyle="TextStyle.H6" TagName="TagName.H6" Class="mb-3"><b>Выберите период для отображения статистики</b></RadzenText>
+@* <RadzenRow>
+<div class="rz-pb-3 rz-text-align-start">
+    <RadzenDatePicker @bind-Value=@startDate Name="RadzenDatePickerBindValue" ShowCalendarWeek />
+</div>
+<div class="rz-pb-3 rz-text-align-start">
+    <RadzenDatePicker @bind-Value=@endDate Name="RadzenDatePickerBindValue" ShowCalendarWeek />
+</div>
+</RadzenRow> *@
+
+<div class="rz-p-sm-6 rz-text-align-start">
+    <RadzenLabel Text="Выберите период из списка" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+    <RadzenDropDown @bind-Value=@value Data=@GetPeriods() Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+</div>
+<RadzenButton ButtonStyle="ButtonStyle.Info" Click="@((args) => GetDatesForSelectedPeriod())" Variant="Variant.Flat" Text="Показать" Class="mb-3 ms-4" Style="width: 150px" />
+@if (groupedErrorData != null)
+{
+    <div class="rz-p-0 rz-p-md-7">
+        <RadzenChart Style="height: 420px; width: auto" >
+            <RadzenValueAxis Step="1" />
+            <RadzenCategoryAxis FormatString="{0:dd/MM/yyyy}" />
+            @foreach (var errorGroup in groupedErrorData)
+            {
+                <RadzenColumnSeries Data="@errorGroup.Value"
+                                    CategoryProperty="StringDate"
+                                    ValueProperty="Count"
+                                    Title="@errorGroup.Key" />
+            }
+        </RadzenChart>
+    </div>
+}
+
+@code {
+    // [Parameter]
+    // public DateTime startDate { get; set; }
+    // [Parameter]
+    // public DateTime endDate { get; set; }
+    private List<ProblemChartInfo> problems;
+    private Dictionary<string, List<ProblemChartInfo>> groupedErrorData;
+    private List<DateTime> allWeekDates;
+    private List<DateTime> allMonthDates;
+    public string value;
+    IEnumerable<string> periodsForSelect;
+
+    public IEnumerable<string> GetPeriods()
+    {
+        return periodsForSelect = new List<string> { "Текущая неделя", $"Текущий месяц ({DateTime.Now.ToString("MMMM")})" };
+    }
+
+    public async Task GetDatesForSelectedPeriod()
+    {
+        if (value == "Текущая неделя")
+        {
+            DateTime currentDate = DateTime.Now;
+            int delta = DayOfWeek.Monday - currentDate.DayOfWeek;
+            if (delta > 0) delta -= 7;
+            DateTime startOfWeek = currentDate.AddDays(delta);
+            DateTime endOfWeek = startOfWeek.AddDays(6);
+            allWeekDates = Enumerable.Range(0, (endOfWeek - startOfWeek).Days + 1)
+                                   .Select(offset => startOfWeek.AddDays(offset))
+                                   .ToList();
+            await ShowStatisticForDates(allWeekDates, startOfWeek, endOfWeek );
+        }
+        else
+        {
+            DateTime currentDate = DateTime.Now;
+            DateTime startOfMonth = new DateTime(currentDate.Year, currentDate.Month, 1);
+            DateTime endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+            allMonthDates = Enumerable.Range(0, (endOfMonth - startOfMonth).Days + 1)
+                                  .Select(offset => startOfMonth.AddDays(offset))
+                                  .ToList();
+            await ShowStatisticForDates(allMonthDates, startOfMonth, endOfMonth);
+        }
+    }
+
+    public async Task ShowStatisticForDates(List<DateTime> allDates, DateTime start, DateTime end)
+    {
+        problems = await problemService.GetProblemInfoForPeriod(allDates, start, end);
+
+        if (problems != null && problems.Any())
+        {
+            var grouped = problems.GroupBy(p => p.Name)
+                                  .ToDictionary(g => g.Key, g => g.ToList());
+
+            groupedErrorData = new Dictionary<string, List<ProblemChartInfo>>();
+            foreach (var errorGroup in grouped)
+            {
+                var completeData = allDates.Count <= 7 ? allDates.Select(date =>
+                    errorGroup.Value.FirstOrDefault(e => e.StringDate == date.Date.ToString("d")) ??
+                    new ProblemChartInfo { Name = errorGroup.Key, StringDate = date.ToString("d"), Count = 0 }).ToList() : allDates.Select(date =>
+                    errorGroup.Value.FirstOrDefault(e => e.StringDate.Substring(0,2) == date.Date.ToString("dd")) ??
+                    new ProblemChartInfo { Name = errorGroup.Key, StringDate = date.ToString("dd"), Count = 0 }).ToList();
+
+                groupedErrorData.Add(errorGroup.Key, completeData);
+            }
+        }
+        else
+        {
+            groupedErrorData = new Dictionary<string, List<ProblemChartInfo>>();
+        }
+    }
+
+}
+
+

@@ -1,0 +1,56 @@
+﻿@using Ekas.Monitoring.Components.Pages
+@using Ekas.Monitoring.Repository
+@using Microsoft.EntityFrameworkCore
+@using System.Linq
+@using Ekas.Monitoring.Models
+@using Ekas.Monitoring.Extensions
+@using Ekas.Monitoring.Services
+
+@inject DialogService DialogService
+@inject CommentService commentService
+@inject ApplicationDbContext applicationDbContext
+
+
+<RadzenDataGrid @ref="incidentGrid" AllowFiltering="true" AllowPaging="true" PageSize="8" AllowSorting="true"
+                Data="@incidents" TItem="Incident">
+    <Columns>
+        <RadzenDataGridColumn Width="100px" Property="Id" Title="ID" Filterable="false" Sortable="false" TextAlign="TextAlign.Center">
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="Name" Title="Название" />
+        <RadzenDataGridColumn Property="CreatedDate" Title="Дата и время создания" />
+        <RadzenDataGridColumn Property="Status" Title="Статус">
+            <Template Context="incident">
+                @incident.Status.GetDisplayName()
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Width="200px" Property="Id" Title="Подробная информация">
+            <Template Context="incident">
+                <RadzenButton ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" Icon="info" class="m-1 align-self-center" Click=@(async () => await OpenIncidentModal(incident.Id, incident.Status.GetDisplayName())) Text="Открыть" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter]
+    public IList<Incident> incidents { get; set; }
+    RadzenDataGrid<Incident> incidentGrid;
+    Incident incident = new();
+
+    private async Task OpenIncidentModal(int incidentId, string status)
+    {
+        string commentText = commentService.GetText(incidentId); 
+        await DialogService.OpenAsync<IncidentCard>($"Инцидент {incidentId} : {status}",
+            new Dictionary<string, object>()
+            {
+                { "IncidentId", incidentId },
+                { "CommentText", commentText ?? string.Empty}
+            },
+            new DialogOptions() { Width = "700px", Height = "auto" });
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+    }
+}

@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper:latest
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: wurstmeister/kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # lenses:
+  #   image: lensesio/box
+  #   ports:
+  #     - "3030:3030"
+  #   environment:
+  #     - ADV_HOST=localhost
+  #   depends_on:
+  #     - kafka
+  #   volumes:
+  #     - "./:/mnt/lenses"
+  #   networks:
+  #     - kafka-net
+  # lenses:
+  #   image: lensesio/box:latest
+  #   environment:
+  #     - ADV_HOST=127.0.0.1
+  #     - EULA=https://licenses.lenses.io/d/?id=e690388c-e4a2-11ee-bf14-42010af01003
+  #      - KAFKA_BROKERS=localhost:9092  # Укажите адреса брокеров Kafka здесь
+  #   ports:
+  #     - "3030:3030"
+  #   volumes:
+  #     - "./:/mnt/lenses"
+  #   restart: always
+
+
+  cmak:
+    image: hlebalbau/kafka-manager:stable
+    container_name: cmak
+    ports:
+      - "9000:9000"
+    environment:
+      ZK_HOSTS: "zookeeper:2181"
+    depends_on:
+      - zookeeper

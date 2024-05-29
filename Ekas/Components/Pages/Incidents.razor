@@ -1,0 +1,12 @@
+﻿@page "/"
+
+@using Ekas.Monitoring.Components.Common
+@using Ekas.Monitoring.Models
+@using Ekas.Monitoring.Repository
+
+@inject IncidentRepository insidentRepository
+
+<body>
+    <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H4" Class="mb-3"><b>Активные инциденты</b></RadzenText>
+    <IncidentDataGrid incidents="@(insidentRepository.GetOpenIncidents())" />
+</body>

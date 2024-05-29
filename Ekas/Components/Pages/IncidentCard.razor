@@ -1,0 +1,94 @@
+﻿@page "/incidentCard"
+@using Ekas.Monitoring.Repository
+@using Microsoft.EntityFrameworkCore
+@using Ekas.Monitoring.Models
+@using Ekas.Monitoring.Extensions
+@using Ekas.Monitoring.Components.Common
+@using Ekas.Monitoring.Services
+
+@inject ApplicationDbContext applicationDbContext
+@inject IncidentService incidentService
+@inject CommentService commentService
+@inject DialogService dialogService
+@inject NotificationService NotificationService
+
+<RadzenStack Gap="1rem" Orientation="Orientation.Vertical" JustifyContent="JustifyContent.SpaceBetween" Style="height: 100%;">
+    <RadzenStack>
+        <RadzenColumn Size="12" SizeMD="6" Class="rz-p-3">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+
+                <IncidentInfo incident="@(incident)"></IncidentInfo>
+
+                </RadzenStack>
+                @if (incident.Status == Status.Open)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info" Click="@((args) => ChangeStatus(incident))" Variant="Variant.Flat" Text="Принять в работу" Style="width: 150px" />
+                </RadzenStack>
+            }
+                @if (incident.Status == Status.Inwork)
+            {
+                <div class="col-md-6 col-lg-12 rz-mt-2">
+                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H3" Class="rz-mt-2 rz-my-0 me-1"><b>Добавьте комментарии по решению</b></RadzenText>
+                    <RadzenTextArea @bind-Value="CommentText" @oninput="OnUserCommentChanged" class="w-100 h-100 rz-mt-2 rz-my-0 me-1" aria-label="TextArea" />
+                </div>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info" Disabled="@isButtonDisabled" Click="@((args) => {ChangeStatus(incident); ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = $"{Texts.incidentClose}", Detail = $"{Texts.incidentCloseDetail}", Duration = 5000 }); })" Variant="Variant.Flat" Text="Выполнить" Style="width: 120px" />
+                </RadzenStack>
+            }
+            @if (incident.Status == Status.Close)
+            {
+                <div class="col-md-6 col-lg-12 rz-mt-2">
+                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H3" Class="rz-mt-2 rz-my-0 me-1"><b>Измените комментарии по решению</b></RadzenText>
+                    <RadzenTextArea @bind-Value="CommentText" class="w-100 h-100 rz-mt-2 rz-my-0 me-1" aria-label="TextArea" />
+                </div>
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="0.5rem">
+                    <RadzenButton ButtonStyle="ButtonStyle.Info" Click="@((args) => {commentService.UpdateComment(CommentText, incident.Id); ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = $"{Texts.incidentEdit}", Duration = 5000 }); })" Variant="Variant.Flat" Text="Изменить" Style="width: 120px" />
+                </RadzenStack>
+            }
+        </RadzenColumn>
+    </RadzenStack>
+</RadzenStack>
+@code {
+    [Parameter] 
+    public int IncidentId { get; set; }
+    private string userComment;
+    private string _commentText;
+    [Parameter]
+    public string CommentText
+    {
+        get => _commentText;
+        set => _commentText = value ?? string.Empty;
+
+    }
+    Incident incident = new();
+    string value;
+    private bool isButtonDisabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        incident = incidentService.GetIncident(IncidentId);
+    }
+
+    public async Task OnUserCommentChanged(ChangeEventArgs args)
+    {
+        userComment = args.Value.ToString();
+        isButtonDisabled = string.IsNullOrEmpty(userComment);
+    }
+
+    public void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
+    public void ChangeStatus(Incident incident)
+    {
+        incidentService.ChangeStatus(incident);
+        if (incident.Status == Status.Close)
+        {
+            commentService.AddComment(CommentText, incident);
+        }
+        StateHasChanged();
+    }
+}
+

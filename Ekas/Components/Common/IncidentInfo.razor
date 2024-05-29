@@ -1,0 +1,35 @@
+﻿@using Ekas.Monitoring.Components.Common
+@using Ekas.Monitoring.Models
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+    <RadzenStack Gap="0">
+        <RadzenRow>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0 me-1"><b>Название:</b></RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0">@(incident.Name)</RadzenText>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0 me-1"><b>Дата и время создания:</b></RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0">@(incident.CreatedDate)</RadzenText>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0 me-1"><b>Название сервиса:</b></RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0">@(incident.ServiceName)</RadzenText>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0 me-1"><b>Категория: </b></RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0">@(incident.Category)</RadzenText>
+        </RadzenRow>
+        <RadzenRow>
+            <RadzenColumn>
+
+                <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 me-1"><b>Описание:</b></RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-2 rz-my-0 rz-text-wrap">@(incident.ErrorDescription)</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+        [Parameter]
+        public Incident incident { get; set; }
+}

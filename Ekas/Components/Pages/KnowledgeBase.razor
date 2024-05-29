@@ -1,0 +1,12 @@
+﻿@page "/knowledgeBase"
+
+@using Ekas.Monitoring.Components.Common
+@using Ekas.Monitoring.Models
+@using Ekas.Monitoring.Repository
+
+@inject IncidentRepository incidentRepository
+
+<body>
+    <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H6" Class="mb-3"><b>Закрытые инциденты</b></RadzenText>
+    <IncidentDataGrid incidents="@(incidentRepository.GetCloseIncidents())" />
+</body>

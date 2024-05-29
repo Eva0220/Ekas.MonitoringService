@@ -1,0 +1,49 @@
+﻿@page "/problem"
+
+@using Ekas.Monitoring.Components.Pages
+@using Ekas.Monitoring.Repository
+@using Microsoft.EntityFrameworkCore
+@using System.Linq
+@using Ekas.Monitoring.ViewModels
+@using Ekas.Monitoring.Extensions
+@using Ekas.Monitoring.Components.Common
+@using Ekas.Monitoring.Services
+
+@inject IncidentRepository incidentRepository
+@inject ApplicationDbContext applicationDbContext
+@inject ProblemService problemService
+
+<RadzenText TextStyle="TextStyle.H5" TagName="TagName.H4" Class="mb-3"><b>Информация о проблемах</b></RadzenText>
+<div class="rz-pb-3 rz-text-align-start">
+    <RadzenLabel Text="Выберите дату начала" Component="RadzenDatePickerBindValue" Class="p-0" Style="vertical-align: middle;" />
+    <RadzenDatePicker @bind-Value=@value1 Name="RadzenDatePickerBindValue" ShowCalendarWeek />
+</div>
+<div class="rz-pb-3 rz-text-align-start">
+    <RadzenLabel Text="Выберите дату окончания" Component="RadzenDatePickerBindValue" Class="p-0" Style="vertical-align: middle;" />
+    <RadzenDatePicker @bind-Value=@value2 Name="RadzenDatePickerBindValue" ShowCalendarWeek />
+</div>
+<RadzenButton ButtonStyle="ButtonStyle.Info" Click="@((args) => GetProblemsForList())" Variant="Variant.Flat" Text="Показать" Class="mb-3" Style="width: 150px" />
+    @if (problems != null)
+{
+    @* <ProblemChart startDate="@value1" endDate="@value2"/> *@
+<RadzenDataGrid Data="@problems" TItem="Problem" ColumnWidth="200px">
+    <Columns>
+        <RadzenDataGridColumn TItem="Problem" Property="Name" Title="Название" />
+        <RadzenDataGridColumn TItem="Problem" Property="OpenCount" Title="Открытые инциденты" />
+        <RadzenDataGridColumn TItem="Problem" Property="InworkCount" Title="Инциденты в работе" />
+        <RadzenDataGridColumn TItem="Problem" Property="ClosedCount" Title="Выполненные инциденты" />
+    </Columns>
+</RadzenDataGrid>
+}
+
+@code {
+    private List<Problem> problems;
+    DateTime value1;
+    DateTime value2;
+
+    public async Task GetProblemsForList()
+    {
+        problems = await problemService.GetCurrentProblems(value1, value2) ;
+        StateHasChanged();
+    }
+}
